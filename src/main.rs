@@ -1,4 +1,5 @@
 use rusqlite::{Connection, Result};
+use sadir::
 
 #[derive(Debug)]
 struct DirectoryEntry {
