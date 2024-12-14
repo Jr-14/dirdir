@@ -1,44 +1,57 @@
 use rusqlite::{Connection, Result};
 
 #[derive(Debug)]
-struct Person {
-    id: i32,
-    name: String,
-    data: Option<Vec<u8>>,
+struct DirectoryEntry {
+    id: Option<i32>,
+    pub path: String,
+    pub name: Option<String>,
+}
+
+#[derive(Debug)]
+struct Directory {
+}
+
+impl DirectoryEntry {
+    pub fn new(path: &str) -> Self {
+        Self {
+            id: None,
+            path: String::from(path),
+            name: None
+        }
+    }
 }
 
 fn main() -> Result<()> {
     let conn = Connection::open("./testdb.sqlite")?;
 
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS person (
+        "CREATE TABLE IF NOT EXISTS directory (
             id    INTEGER PRIMARY KEY,
-            name  TEXT NOT NULL,
-            data  BLOB
+            path  TEXT NOT NULL,
+            name  TEXT
         )",
         (), // empty list of parameters.
     )?;
-    let me = Person {
-        id: 0,
-        name: "Steven".to_string(),
-        data: None,
-    };
+
+    let dir = DirectoryEntry::new("./hello/world");
+
     conn.execute(
-        "INSERT INTO person (name, data) VALUES (?1, ?2)",
-        (&me.name, &me.data),
+        "INSERT INTO directory (name, path) VALUES (?1, ?2)",
+        (&dir.name, &dir.path)
     )?;
 
-    let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
-    let person_iter = stmt.query_map([], |row| {
-        Ok(Person {
+    let mut stmt = conn.prepare("SELECT * FROM directory")?;
+    let dir_iter = stmt.query_map([], |row| {
+        Ok(DirectoryEntry {
             id: row.get(0)?,
-            name: row.get(1)?,
-            data: row.get(2)?,
+            path: row.get(1)?,
+            name: row.get(2)?,
         })
     })?;
 
-    for person in person_iter {
-        println!("Found person {:?}", person.unwrap());
+    for dir in dir_iter {
+        println!("Found directory {:?}", dir.unwrap());
     }
+
     Ok(())
 }
