@@ -22,7 +22,7 @@ impl DirectoryEntry {
 }
 
 fn main() -> Result<()> {
-    let conn = Connection::open("./testdb.sqlite")?;
+    let conn = Connection::open("./db/testdb.sqlite")?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS directory (
