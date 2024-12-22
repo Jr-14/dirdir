@@ -1,5 +1,4 @@
 use rusqlite::{Connection, Result};
-// use clap::{Parser, arg, command, value_parser, ArgAction, Command};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -16,13 +15,25 @@ enum Commands {
     Add
 }
 
-
+#[derive(Debug)]
+struct DirectoryEntry {
+    id: Option<i32>,
+    pub path: String,
+    pub name: Option<String>,
+}
 
 #[derive(Debug)]
-struct Person {
-    id: i32,
-    name: String,
-    data: Option<Vec<u8>>,
+struct Directory {
+}
+
+impl DirectoryEntry {
+    pub fn new(path: &str) -> Self {
+        Self {
+            id: None,
+            path: String::from(path),
+            name: None
+        }
+    }
 }
 
 fn main() {
