@@ -1,11 +1,14 @@
 use rusqlite::{Connection, Result, params};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
-#[derive(Parser, Debug)]
-#[command(name = "sd", author, version, about, long_about = None)]
-struct Args {
-    #[command(subcommand)]
-    cmd: Commands
+#[derive(Args, Debug, Clone)]
+#[group(required = true, multiple = false)]
+struct PathOrName {
+    #[arg(long)]
+    name: Option<String>,
+
+    #[arg(long)]
+    path: Option<String>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -20,8 +23,20 @@ enum Commands {
 
         /// Name of the directory
         name: Option<String>,
-    }
+    },
 
+    #[command(aliases = ["rm"])]
+    Delete {
+        #[command(flatten)]
+        path_or_name: PathOrName,
+    },
+}
+
+#[derive(Parser, Debug)]
+#[command(name = "sd", author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    cmd: Commands
 }
 
 #[derive(Debug)]
@@ -42,7 +57,7 @@ impl DirectoryEntry {
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = Cli::parse();
     println!("{:?}", args);
 
     let conn = Connection::open("./db/testdb.sqlite")?;
@@ -55,7 +70,7 @@ fn main() -> Result<()> {
         (), // empty list of parameters.
     )?;
 
-    match args.cmd {
+    match &args.cmd {
         Commands::List => {
             println!("Hello from List");
             let mut stmt = conn.prepare("SELECT id, path, name FROM directories;")?;
@@ -71,12 +86,21 @@ fn main() -> Result<()> {
             }
         },
         Commands::Add { path, name } => {
-            let new_dir = DirectoryEntry::new(&path, name);
+            let new_dir = DirectoryEntry::new(&path, name.clone());
             conn.execute(
                 "INSERT INTO directories (path, name) VALUES (?1, ?2)",
                 params![&new_dir.path, &new_dir.name]
             )?;
-        }
+        },
+        Commands::Delete { path_or_name } => {
+            if let Some(path) = &path_or_name.path {
+                conn.execute("DELETE FROM directories WHERE path = ?;", [path])?;
+            };
+
+            if let Some(name) = &path_or_name.name {
+                conn.execute("DELETE FROM directories WHERE name = ?;", [name])?;
+            }
+        },
     }
 
     Ok(())
