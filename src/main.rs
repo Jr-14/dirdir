@@ -10,17 +10,10 @@ struct Args {
 
 #[derive(Subcommand, Debug, Clone)]
 enum Commands {
-    // Get(String),
-    Get,
-    Set,
     List,
-    // Add(String),
     Add {
-        /// Interesting name
+        /// Path to add
         path: String,
-
-        #[arg(short, long)]
-        list: bool,
     }
 
 }
@@ -29,17 +22,6 @@ enum Commands {
 struct DirectoryEntry {
     id: Option<i32>,
     pub path: String,
-}
-
-#[derive(Debug)]
-struct Person {
-    id: i32,
-    name: String,
-    data: Option<Vec<u8>>,
-}
-
-#[derive(Debug)]
-struct Directory {
 }
 
 impl DirectoryEntry {
@@ -57,33 +39,7 @@ fn main() -> Result<()> {
 
     let conn = Connection::open("./testdb.sqlite")?;
 
-    let me = Person {
-        id: 0,
-        name: "Steven".to_string(),
-        data: None,
-    };
-    conn.execute(
-        "INSERT INTO person (name, data) VALUES (?1, ?2)",
-        (&me.name, &me.data),
-    )?;
-
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS directories (
-            id      INTEGER PRIMARY KEY,
-            path    TEXT NOT NULL
-        )",
-        (), // empty list of parameters.
-    )?;
-    let dir = DirectoryEntry::new("hello world");
-    conn.execute(
-        "INSERT INTO directories (path, something) VALUES (?1, ?2)",
-        (&dir.path, "something"),
-    )?;
-
     match args.cmd {
-        Commands::Get => { println!("Hello from command GET") },
-        Commands::Set => { println!("Hello from command SET") },
         Commands::List => {
             println!("Hello from List");
             let mut stmt = conn.prepare("SELECT id, path FROM directories")?;
@@ -97,40 +53,14 @@ fn main() -> Result<()> {
                 println!("{:?}", dir.unwrap());
             }
         },
-        Commands::Add { list, path } => {
+        Commands::Add { path } => {
             let new_dir = DirectoryEntry::new(&path);
             conn.execute(
                 "INSERT INTO directories (path) VALUES (?1)",
-                (&new_dir.path),
+                [&new_dir.path],
             )?;
-            if list {
-                println!("Hello from command Add: {:?}, name is: {:?}", list, name);
-            } else {
-                println!("Hello from command Add: {:?}, name is: {:?} - ohh nooo", list, name);
-            }
         }
     }
-    // let me = Person {
-    //     id: 0,
-    //     name: "Steven".to_string(),
-    //     data: None,
-    // };
-    // conn.execute(
-    //     "INSERT INTO person (name, data) VALUES (?1, ?2)",
-    //     (&me.name, &me.data),
-    // )?;
-    //
-    // let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
-    // let person_iter = stmt.query_map([], |row| {
-    //     Ok(Person {
-    //         id: row.get(0)?,
-    //         name: row.get(1)?,
-    //         data: row.get(2)?,
-    //     })
-    // })?;
-    //
-    // for person in person_iter {
-    //     println!("Found person {:?}", person.unwrap());
-    // }
+
     Ok(())
 }
