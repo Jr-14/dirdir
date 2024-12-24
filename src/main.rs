@@ -85,6 +85,7 @@ fn main() -> Result<()> {
                 println!("{:?}", dir.unwrap());
             }
         },
+
         Commands::Add { path, name } => {
             let new_dir = DirectoryEntry::new(&path, name.clone());
             conn.execute(
@@ -92,14 +93,25 @@ fn main() -> Result<()> {
                 params![&new_dir.path, &new_dir.name]
             )?;
         },
+
         Commands::Delete { path_or_name } => {
             if let Some(path) = &path_or_name.path {
-                conn.execute("DELETE FROM directories WHERE path = ?;", [path])?;
+                if let Ok(value) = conn.execute("DELETE FROM directories WHERE path = ?;", [path]) {
+                    match value {
+                        0 => eprintln!("Path {} not found", path),
+                        _ => (),
+                    }
+                };
             };
 
             if let Some(name) = &path_or_name.name {
-                conn.execute("DELETE FROM directories WHERE name = ?;", [name])?;
-            }
+                if let Ok(value) = conn.execute("DELETE FROM directories WHERE name = ?;", [name]) {
+                    match value {
+                        0 => eprintln!("Name {} not found", name),
+                        _ => (),
+                    }
+                };
+            };
         },
     }
 
